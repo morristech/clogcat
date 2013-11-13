@@ -24,6 +24,7 @@ Forked from original `logcat` by &copy; Spirin Vladimir and almost completely re
 - changed handling of colors to match log levels by logcat's own Priority markers.
 - pass commandline args to adb and/or logcat. (also, adb args if you include "logcat" in your own args)
     e.g.
+
         $ logcat -s <serial> logcat -v long
         >>> Running: adb -s <serial> logcat -v long <<<
         ...
