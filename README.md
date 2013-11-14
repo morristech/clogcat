@@ -2,7 +2,10 @@
 
 ## How to start using:
 
-  Not on NPM yet, but you can clone and do `npm install -g`
+  On NPM so installation is a simple as `npm install -g clogcat`
+
+  Or clone the repo and use `npm install -g` in the repo root.
+
   Then simple usage is:
 
     $ clogcat
