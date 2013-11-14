@@ -7,7 +7,7 @@
      "email": "spirin.vladimir@gmail.com"}
   ],
   "dependencies": {
-    "colors": "0.6.*"
+    "colors": "0.6.x"
   },
   "version": "0.1.0",
   "main": "index.js",
