@@ -3,17 +3,24 @@ var util = require('util'),
 	spawn = require('child_process').spawn;
 
 var levels = {
-  "A": 'blue', //assert ? I don;t know I've never used assert...
+  "A": 'inverse', //assert ? I've never seen an assert log, so I'm not sure it's A. I'd have to write one to test...
   "D": 'cyan', //debug
-  "E": 'red',
-  "I": 'green',
-  "V": 'magenta',
-  "W": 'yellow',
-  "_": "white" //for default...
+  "E": 'red', //error
+  "I": 'green', //info
+  "V": 'bold', //verbose
+  "W": 'yellow', //warning
+  "F": ['white', 'bold','redBG'], //fatal
+  "_": "grey" //for default...
 };
 
 colors.setTheme(levels);
 var keys = Object.keys(levels);
+
+//For testing
+// keys.forEach(function(k){
+//   console.log(("Level: "+k)[k]);
+// });
+// process.exit();
 
 //these match the line to a class based on the "format"
 //which is the -v flag on adb logcat
@@ -24,7 +31,7 @@ var matchers = {
   "process": charMatch(0),
   "tag": charMatch(0),
   "thread": charMatch(0),
-  "raw": function(){ console.error("logcat's raw output doesn't have Level identifiers"); process.exit(1); },
+  "raw": function(){ return "_"; },
   "time": charMatch(19), // "11-13 17:28:18.396 V/TAG( ...) ..."
   "threadtime": charMatch(31), // "11-13 17:29:48.398  3132  3150 V TAG: ... "
   "long": charMatch(33) // "[ 11-13 17:41:33.398  3132: 3150 V/"
@@ -35,13 +42,15 @@ var logcat_args = process.argv.slice(2);
 var logcat_in_args = false;
 var FORMAT = "brief"; //the logcat default
 var restart_on_exit = true;
+var file_output_pos = -1;
+var b_flag = false;
 for(var i = 0; i < logcat_args.length; i++ ){
   var arg = logcat_args[i];
 
   //some sanity.
   if(arg == "-B"){
-    console.error("the '-B' flag kinda defeats the purpose of this utility");
-    process.exit(1);
+    console.error("the '-B' flag kinda defeats the purpose of this utility, no formatting will be applied".E);
+    b_flag = true;
   }
 
   if( ["-t", "-c", "-d"].indexOf(arg) > -1){
@@ -52,6 +61,11 @@ for(var i = 0; i < logcat_args.length; i++ ){
   if(arg === "logcat"){
     logcat_in_args = true;
     continue;
+  }
+
+  if(arg === "-f" && i +1 != logcat_args.length){
+    //this means log to file on the device...
+
   }
 
   if(arg === "-v" && i +1 != logcat_args.length){
@@ -68,8 +82,12 @@ if(!logcat_in_args){
 }
 
 if(formats.indexOf(FORMAT) < 0){
-  console.error("Sorry, I don't know how to process format '%s'", FORMAT);
+  console.error("Sorry, I don't know how to process format '%s'".F, FORMAT);
   process.exit(1);
+}
+
+if(FORMAT == "raw"){
+  console.log("logcat's raw output doesn't have Level identifiers, everything is going to be dull...".bold);
 }
 
 var colorLine = function(matcher){
@@ -89,13 +107,14 @@ function line_buffer(stream, fn, count){
   var pos, tmpline;
   stream.setEncoding("utf8");
   stream.on("data", function(data){
+
     buffer += data;
     while( (pos = buffer.indexOf("\n")) > -1 ){
       if(pos === 0){
         buffer = buffer.slice(1);
       }else{
         tmpline = buffer.slice(0, pos).trim();
-        if(tmpline.indexOf("---------") === 0){
+        if(tmpline.indexOf("--------- beginning of ") === 0){
           //if option T send lines beginning "--------" as one
           fn(tmpline);
         }else{
@@ -119,8 +138,13 @@ function line_buffer(stream, fn, count){
 function start(){
   console.log( (">>> Running: adb "+logcat_args.join(" ")+" <<<").green.bold )
   var logcat = spawn('adb', logcat_args);
-  line_buffer(logcat.stdout, colorLine(matchers[FORMAT]), FORMAT === "long" ? 3 : 1);
-  line_buffer(logcat.stderr, function(line){ console.log(line.E) });
+  if(b_flag){
+    process.stdout.pipe(logcat.stdout);
+    process.stderr.pipe(logcat.stderr);
+  }else{
+    line_buffer(logcat.stdout, colorLine(matchers[FORMAT]), FORMAT === "long" ? 3 : 1);
+    line_buffer(logcat.stderr, function(line){ console.log(line.E) });
+  }
   if(restart_on_exit){
     logcat.on("exit", start);
   }
