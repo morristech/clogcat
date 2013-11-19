@@ -53,7 +53,7 @@ for(var i = 0; i < logcat_args.length; i++ ){
     b_flag = true;
   }
 
-  if( ["-t", "-c", "-d"].indexOf(arg) > -1){
+  if(["-t", "-c", "-d"].indexOf(arg) > -1){
     restart_on_exit = false;
     continue;
   }
@@ -137,7 +137,7 @@ function line_buffer(stream, fn, count){
 
 function start(){
   console.log( (">>> Running: adb "+logcat_args.join(" ")+" <<<").green.bold )
-  var logcat = spawn('adb', logcat_args);
+  var logcat = spawn("adb", logcat_args);
   if(b_flag){
     process.stdout.pipe(logcat.stdout);
     process.stderr.pipe(logcat.stderr);
@@ -148,17 +148,14 @@ function start(){
   if(restart_on_exit){
     logcat.on("exit", start);
   }
-  logcat.on('error', function(err) {
-       if (err.code === 'ENOENT') {
-         
-         errorOutput = 'Can not find the binary adb';
-         console.log( (">>> "+errorOutput+" <<<").red.bold )
-
-      } else {
-        errorOutput += err.toString();
-        console.log( ">>> "+errorOutput+" <<<" )
-
-      }
+  logcat.on("error", function(err) {
+    var msg;
+    if(err.code === "ENOENT"){
+      msg = ">>> Can not find the `adb` binary, Android SDK in your PATH? <<<";
+    }else{
+      msg = ">>> "+err.toString()+" <<<";
+    }
+    console.error(msg.F);
    });
 }
 
