@@ -148,6 +148,18 @@ function start(){
   if(restart_on_exit){
     logcat.on("exit", start);
   }
+  logcat.on('error', function(err) {
+       if (err.code === 'ENOENT') {
+         
+         errorOutput = 'Can not find the binary adb';
+         console.log( (">>> "+errorOutput+" <<<").red.bold )
+
+      } else {
+        errorOutput += err.toString();
+        console.log( ">>> "+errorOutput+" <<<" )
+
+      }
+   });
 }
 
 //now start
